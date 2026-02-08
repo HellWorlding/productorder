@@ -18,29 +18,35 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     @Transactional
-    public ProductResponse create(ProductCreateRequest request){
-        Product product = new Product(request.getName(), request.getPrice());
+    public ProductResponse create(ProductCreateRequest request) {
+        // NOTE: 요청 JSON에 stock을 보내더라도, 여기서 엔티티에 stock을 넣지 않으면
+        // DB에는 기본값(대부분 0)으로 저장된다.
+        // 따라서 ProductCreateRequest에 getStock()이 있어야 하고,
+        // Product 엔티티에도 (name, price, stock) 생성자(또는 stock 세팅 로직)가 필요하다.
+
+        Product product = new Product(request.getName(), request.getPrice(), request.getStock());
         Product saved = productRepository.save(product);
-        return new ProductResponse(saved.getId(), saved.getName(), saved.getPrice());
+
+        return new ProductResponse(saved.getId(), saved.getName(), saved.getPrice(), saved.getStock());
     }
     @Transactional(readOnly = true)
     public ProductResponse getOne(Long id){
         Product product = productRepository.findById(id)
                 .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
-        return new ProductResponse(product.getId(), product.getName(), product.getPrice());
+        return new ProductResponse(product.getId(), product.getName(), product.getPrice(), product.getStock());
     }
     @Transactional(readOnly=true)
     public List<ProductResponse> getAll(){
         return productRepository.findAll().stream()
-                .map(p -> new ProductResponse(p.getId(),p.getName(),p.getPrice())).toList();
+                .map(p -> new ProductResponse(p.getId(),p.getName(),p.getPrice(),p.getStock())).toList();
     }
 
     @Transactional
     public ProductResponse update(Long id, ProductUpdateRequest request){
         Product product = productRepository.findById(id)
                 .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: "+id));
-        product.update(request.getName(), request.getPrice()); //dirty checking
-        return new ProductResponse(product.getId(), product.getName(), product.getPrice());
+        product.update(request.getName(), request.getPrice(), request.getStock()); //dirty checking
+        return new ProductResponse(product.getId(), product.getName(), product.getPrice(), product.getStock());
     }
 
     @Transactional

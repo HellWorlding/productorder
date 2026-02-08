@@ -6,6 +6,8 @@ import com.productorder.order.order.dto.OrderResponse;
 import com.productorder.order.order.repository.OrderRepository;
 import com.productorder.order.product.domain.Product;
 import com.productorder.order.product.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,12 +41,14 @@ public class OrderService {
     public OrderResponse create(OrderCreateRequest request) {
 
         // productId로 상품 조회
-        Product product = productRepository.findById(request.getProductId())
+        Product product = productRepository.findByIdForUpdate(request.getProductId())
                 // 상품이 없으면 주문 생성 자체가 불가능
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
 
         // 주문 엔티티 생성
         // product는 연관관계로만 연결 (productName 복사 저장 금지)
+        product.decreaseStock(request.getQuantity());
+
         Order order = new Order(product, request.getQuantity());
 
         // 주문 저장
@@ -79,4 +83,19 @@ public class OrderService {
         // productName은 order -> product -> name 으로 조회됨
         return OrderResponse.from(order);
     }
+
+    // 주문 목록 조회 (페이지네이션)
+    // - 조회 전용 → readOnly = true
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getOrders(Pageable pageable) {
+
+        // Order 엔티티 페이지 조회
+        Page<Order> orders = orderRepository.findAll(pageable);
+
+        // Entity → DTO 변환
+        // 여기서 order.getProduct().getName() 접근 → N+1 발생
+        return orders.map(OrderResponse::from);
+    }
+
+
 }

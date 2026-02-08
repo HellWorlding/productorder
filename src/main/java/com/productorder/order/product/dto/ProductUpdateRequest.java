@@ -14,4 +14,7 @@ public class ProductUpdateRequest {
 
     @Min(0)
     private int price;
+
+    @Min(0)
+    private int stock;
 }

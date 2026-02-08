@@ -5,6 +5,9 @@ import com.productorder.order.order.dto.OrderResponse;
 import com.productorder.order.order.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,4 +38,15 @@ public class OrderController {
         // 조회 로직은 Service로 위임
         return orderService.getOne(id);
     }
+
+    // 주문 목록 조회 API
+    // GET /api/order?page=0&size=10
+    @GetMapping
+    public Page<OrderResponse> getOrders(
+            //10마다 페이지네이션
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        return orderService.getOrders(pageable);
+    }
+
 }
